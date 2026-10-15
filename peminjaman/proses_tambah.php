@@ -5,10 +5,10 @@ require __DIR__ . '/../includes/koneksi.php';
 
 csrf_verify();
 
-$anggotaId = $_POST['anggota_id'] ?? '';
-$bukuId = $_POST['buku_id'] ?? '';
+$anggotaId = (int) ($_POST['anggota_id'] ?? 0);
+$bukuId = (int) ($_POST['buku_id'] ?? 0);
 
-if ($anggotaId === '' || $bukuId === '') {
+if ($anggotaId < 1 || $bukuId < 1) {
     $_SESSION['flash'] = ['type' => 'error', 'pesan' => 'Anggota dan buku wajib dipilih.'];
     header('Location: tambah.php');
     exit;
@@ -16,6 +16,19 @@ if ($anggotaId === '' || $bukuId === '') {
 
 try {
     $pdo->beginTransaction();
+
+    // Validasi bisnis: anggota yang punya pinjaman belum kembali lebih dari
+    // 14 hari (terlambat) tidak boleh meminjam buku baru.
+    $telat = $pdo->prepare(
+        "SELECT COUNT(*) FROM peminjaman
+         WHERE anggota_id = :anggota_id
+           AND status = 'dipinjam'
+           AND (CURRENT_DATE - tanggal_pinjam) > 14"
+    );
+    $telat->execute(['anggota_id' => $anggotaId]);
+    if ((int) $telat->fetchColumn() > 0) {
+        throw new Exception('Anggota memiliki pinjaman yang terlambat (lebih dari 14 hari). Kembalikan dulu sebelum meminjam lagi.');
+    }
 
     // Kunci baris buku (FOR UPDATE) agar stok tidak berubah oleh transaksi lain
     // di tengah proses ini — mencegah stok menjadi negatif akibat race condition.

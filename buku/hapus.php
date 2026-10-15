@@ -12,11 +12,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 csrf_verify();
 
-$id = $_POST['id'] ?? null;
-if ($id) {
-    $stmt = $pdo->prepare("DELETE FROM buku WHERE id = :id");
-    $stmt->execute(['id' => $id]);
-    $_SESSION['flash'] = ['type' => 'success', 'pesan' => 'Buku berhasil dihapus.'];
+$id = (int) ($_POST['id'] ?? 0);
+if ($id > 0) {
+    try {
+        $stmt = $pdo->prepare("DELETE FROM buku WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        $_SESSION['flash'] = ['type' => 'success', 'pesan' => 'Buku berhasil dihapus.'];
+    } catch (PDOException $e) {
+        // Buku yang masih punya riwayat peminjaman tidak boleh dihapus (foreign key).
+        $_SESSION['flash'] = ['type' => 'error', 'pesan' => 'Buku tidak bisa dihapus karena masih memiliki riwayat peminjaman.'];
+    }
 }
 
 header('Location: list.php');

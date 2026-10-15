@@ -339,3 +339,26 @@ footer {
         max-width: 100%;
     }
 }
+
+/* ===== Tambahan: badge role & indikator loading ===== */
+.role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 0 8px 0 4px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #ffffff;
+    color: #1d5a8a;
+}
+
+.role-admin {
+    background: #ffd166;
+    color: #5a3e00;
+}
+
+.loading {
+    padding: 8px 0;
+    color: #555;
+    font-style: italic;
+}

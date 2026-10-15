@@ -7,7 +7,13 @@ require __DIR__ . '/../includes/koneksi.php';
 $flash = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 
-$daftarAnggota = $pdo->query("SELECT * FROM anggota ORDER BY nama")->fetchAll(PDO::FETCH_ASSOC);
+$daftarAnggota = $pdo->query(
+    "SELECT a.*,
+            EXISTS (SELECT 1 FROM peminjaman p
+                    WHERE p.anggota_id = a.id AND p.status = 'dipinjam'
+                      AND (CURRENT_DATE - p.tanggal_pinjam) > 14) AS terlambat
+     FROM anggota a ORDER BY a.nama"
+)->fetchAll(PDO::FETCH_ASSOC);
 $daftarBukuTersedia = $pdo->query("SELECT * FROM buku WHERE stok > 0 ORDER BY judul")->fetchAll(PDO::FETCH_ASSOC);
 ?>
         <section>
@@ -29,8 +35,8 @@ $daftarBukuTersedia = $pdo->query("SELECT * FROM buku WHERE stok > 0 ORDER BY ju
                     <select id="anggota_id" name="anggota_id" required>
                         <option value="">-- Pilih Anggota --</option>
                         <?php foreach ($daftarAnggota as $anggota): ?>
-                        <option value="<?php echo $anggota['id']; ?>">
-                            <?php echo e($anggota['nama']); ?> (<?php echo e($anggota['no_anggota']); ?>)
+                        <option value="<?php echo $anggota['id']; ?>" <?php echo $anggota['terlambat'] ? 'disabled' : ''; ?>>
+                            <?php echo e($anggota['nama']); ?> (<?php echo e($anggota['no_anggota']); ?>)<?php echo $anggota['terlambat'] ? ' - ada pinjaman terlambat' : ''; ?>
                         </option>
                         <?php endforeach; ?>
                     </select>
